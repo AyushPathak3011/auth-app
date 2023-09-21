@@ -6,9 +6,38 @@ import Image from "next/image";
 import { HiAtSymbol, HiFingerPrint } from "react-icons/hi";
 import { useState } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
+import { useFormik } from "formik";
+import login_validate from "../lib/validate";
+import { useRouter } from "next/router";
 
 export default function Login() {
   const [show, setShow] = useState(false);
+  const router = useRouter();
+  const formik = useFormik({
+    initialValues: {
+      email: "",
+      password: "",
+    },
+    validate: login_validate,
+    onSubmit,
+  });
+
+  async function onSubmit(values) {
+    const status = await signIn("credentials", {
+      redirect: false,
+      email: values.email,
+      password: values.password,
+      callbackUrl: "/",
+    });
+
+    if (status.ok) router.push(status.url);
+    else {
+      console.log(status);
+    }
+  }
+
+  console.log(formik.errors);
+
   async function handleGoogleSignin() {
     await signIn("google", { callbackUrl: "http://localhost:3000" });
   }
@@ -29,24 +58,46 @@ export default function Login() {
         </div>
 
         {/* form */}
-        <form className="flex flex-col gap-5">
-          <div className={styles.input_group}>
+        <form className="flex flex-col gap-5" onSubmit={formik.handleSubmit}>
+          <div
+            className={`${styles.input_group} ${
+              formik.errors.email && formik.touched.email
+                ? "border-rose-600"
+                : ""
+            }`}
+          >
             <input
               type="email"
               name="email"
               placeholder="Email"
               className={styles.input_text}
+              onChange={formik.handleChange}
+              {...formik.getFieldProps("email")}
             />
             <span className="icon flex items-center px-4">
               <HiAtSymbol size={25} />
             </span>
           </div>
-          <div className={styles.input_group}>
+          {/* {formik.errors.email && formik.touched.email ? (
+            <span className="text-rose-500">{formik.errors.email}</span>
+          ) : (
+            <></>
+          )} */}
+
+          <div
+            className={`${styles.input_group} ${
+              formik.errors.password && formik.touched.password
+                ? "border-rose-600"
+                : ""
+            }`}
+          >
             <input
               type={`${show ? "text" : "password"}`}
               name="password"
               placeholder="password"
               className={styles.input_text}
+              onChange={formik.handleChange}
+              {...formik.getFieldProps("password")}
             />
             <span
               className="icon flex items-center px-4"
@@ -54,7 +105,17 @@ export default function Login() {
             >
               <HiFingerPrint size={25} />
             </span>
+            {formik.errors.password ? (
+              <span>{formik.errors.password}</span>
+            ) : (
+              <></>
+            )}
           </div>
+          {/* {formik.errors.password && formik.touched.password ? (
+            <span className="text-rose-500">{formik.errors.password}</span>
+          ) : (
+            <></>
+          )} */}
 
           {/* login buttons */}
           <div className="input-button">
