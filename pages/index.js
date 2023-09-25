@@ -77,7 +77,6 @@ function User({ session, handleSignOut }) {
 
 export async function getServerSideProps({ req }) {
   const session = await getSession({ req }); // get session from server side
-
   if (!session) {
     return {
       redirect: {
